@@ -1,0 +1,41 @@
+:root {
+    --accent-color: #8b5cf6;
+    --accent-hover: #7c3aed;
+    --bg-primary: #1f1f2e;
+    --bg-secondary: #2d2b42;
+    --bg-tertiary: #3c3a5c;
+    --text-primary: #e2e8f0;
+    --text-secondary: #a5b4fc;
+    --text-muted: #6366f1;
+    --border-color: #4c51bf;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --user-message-bg: #374151;
+    --ai-message-bg: #4b5563;
+    --shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.1), 0 2px 4px -1px rgba(139, 92, 246, 0.06);
+    --border-radius: 8px;
+    --base-font-size: 14px;
+}
+
+/* Purple dark theme specific styling */
+body {
+    background: linear-gradient(135deg, #1f1f2e 0%, #2d2b42 100%);
+}
+
+.navbar {
+    background: rgba(45, 43, 66, 0.95);
+    backdrop-filter: blur(10px);
+}
+
+.chat-sidebar,
+.chat-main,
+.service-card {
+    background: rgba(45, 43, 66, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+.tab-button.active {
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+    color: white;
+}

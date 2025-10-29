@@ -1,0 +1,62 @@
+{
+  "core": {
+    "name": "AI Companion",
+    "version": "3.0.0",
+    "debug": true
+  },
+  "ollama": {
+    "model": "llama2",
+    "base_url": "http://localhost:11434",
+    "temperature": 0.7,
+    "max_tokens": 500
+  },
+  "memory": {
+    "type": "basic",
+    "max_memories": 1000,
+    "semantic_search_enabled": true,
+    "vector_db_path": "./data/memories",
+    "importance_threshold": 0.3
+  },
+  "webui": {
+    "enabled": true,
+    "host": "127.0.0.1",
+    "port": 5000,
+    "debug": false
+  },
+  "plugins": {
+    "enabled": true,
+    "plugins_path": "./plugins/custom_plugins",
+    "core_plugins": ["cli_interface", "webui", "discord_bot", "vtube_studio", "piper_tts"]
+  },
+  "integrations": {
+    "discord": {
+      "enabled": false,
+      "token": "YOUR_DISCORD_BOT_TOKEN_HERE",
+      "channel_id": ""
+    },
+    "vtube_studio": {
+      "enabled": false,
+      "websocket_url": "ws://localhost:8001",
+      "auto_expressions": true
+    },
+    "piper_tts": {
+      "enabled": false,
+      "model_path": "",
+      "voice": "en_US-lessac-medium",
+      "speak_responses": true
+    }
+  },
+  "personality": {
+    "learning_enabled": true,
+    "adaptation_rate": 0.1,
+    "emotional_context": true,
+    "trait_adaptation": true,
+    "emotional_responses": true
+  },
+  "appearance": {
+    "theme": "dark",
+    "accent_color": "#8b5cf6",
+    "compact_mode": false,
+    "animations": true
+  }
+}

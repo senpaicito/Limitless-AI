@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="services-container">
+    <div class="services-header">
+        <h2>🛠️ Services Status</h2>
+        <p>Monitor and manage all AI Companion services</p>
+    </div>
+    
+    <div class="services-grid" id="services-grid">
+        <!-- Services will be populated by JavaScript -->
+    </div>
+    
+    <div class="services-details">
+        <h3>Service Details</h3>
+        <div id="service-details" class="details-content">
+            Select a service to view details and configuration options.
+        </div>
+    </div>
+</div>
+
+<script>
+    // Services status management
+    function updateServicesStatus() {
+        socket.emit('get_services_status');
+    }
+    
+    socket.on('services_status', function(services) {
+        const servicesGrid = document.getElementById('services-grid');
+        servicesGrid.innerHTML = '';
+        
+        Object.entries(services).forEach(([serviceName, serviceInfo]) => {
+            const serviceCard = document.createElement('div');
+            serviceCard.className = `service-card ${serviceInfo.status}`;
+            serviceCard.addEventListener('click', () => showServiceDetails(serviceName, serviceInfo));
+            
+            const statusIcon = serviceInfo.status === 'connected' || serviceInfo.status === 'active' || serviceInfo.status === 'running' ? '✅' : '❌';
+            
+            serviceCard.innerHTML = `
+                <div class="service-icon">${getServiceIcon(serviceName)}</div>
+                <div class="service-info">
+                    <h3 class="service-name">${formatServiceName(serviceName)}</h3>
+                    <div class="service-status ${serviceInfo.status}">
+                        ${statusIcon} ${serviceInfo.status}
+                    </div>
+                    <div class="service-details">
+                        ${getServiceDetails(serviceName, serviceInfo)}
+                    </div>
+                </div>
+            `;
+            
+            servicesGrid.appendChild(serviceCard);
+        });
+    });
+    
+    function getServiceIcon(serviceName) {
+        const icons = {
+            'ollama': '🤖',
+            'memory': '🧠', 
+            'webui': '🌐',
+            'plugins': '🔌',
+            'discord': '💬',
+            'vtube_studio': '🎭',
+            'tts': '🔊'
+        };
+        return icons[serviceName] || '⚙️';
+    }
+    
+    function formatServiceName(serviceName) {
+        return serviceName.split('_').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+    }
+    
+    function getServiceDetails(serviceName, serviceInfo) {
+        switch(serviceName) {
+            case 'ollama':
+                return `Model: ${serviceInfo.model}<br>Available: ${serviceInfo.available_models} models`;
+            case 'memory':
+                return `Memories: ${serviceInfo.total_memories}<br>Vector: ${serviceInfo.vector_memory ? 'Yes' : 'No'}`;
+            case 'webui':
+                return `URL: http://${serviceInfo.host}:${serviceInfo.port}`;
+            case 'plugins':
+                return `Loaded: ${serviceInfo.loaded_plugins.length} plugins`;
+            default:
+                return serviceInfo.enabled ? 'Enabled' : 'Disabled';
+        }
+    }
+    
+    function showServiceDetails(serviceName, serviceInfo) {
+        const detailsDiv = document.getElementById('service-details');
+        
+        let detailsHTML = `
+            <h4>${formatServiceName(serviceName)} Configuration</h4>
+            <div class="service-config">
+        `;
+        
+        // Add configuration options based on service
+        switch(serviceName) {
+            case 'ollama':
+                detailsHTML += `
+                    <label>Model:
+                        <select id="ollama-model">
+                            <option value="llama2" ${serviceInfo.model === 'llama2' ? 'selected' : ''}>Llama 2</option>
+                            <option value="mistral" ${serviceInfo.model === 'mistral' ? 'selected' : ''}>Mistral</option>
+                            <option value="codellama" ${serviceInfo.model === 'codellama' ? 'selected' : ''}>CodeLlama</option>
+                        </select>
+                    </label>
+                `;
+                break;
+            case 'memory':
+                detailsHTML += `
+                    <label>
+                        <input type="checkbox" id="semantic-search" ${serviceInfo.vector_memory ? 'checked' : ''}>
+                        Enable Semantic Search
+                    </label>
+                    <label>Max Memories:
+                        <input type="number" id="max-memories" value="1000" min="100" max="10000">
+                    </label>
+                `;
+                break;
+            case 'discord':
+            case 'vtube_studio':
+            case 'tts':
+                detailsHTML += `
+                    <label>
+                        <input type="checkbox" id="${serviceName}-enabled" ${serviceInfo.enabled ? 'checked' : ''}>
+                        Enable ${formatServiceName(serviceName)}
+                    </label>
+                `;
+                break;
+        }
+        
+        detailsHTML += `
+                <button class="btn-primary" onclick="saveServiceConfig('${serviceName}')">Save Changes</button>
+            </div>
+        `;
+        
+        detailsDiv.innerHTML = detailsHTML;
+    }
+    
+    function saveServiceConfig(serviceName) {
+        const config = {};
+        
+        switch(serviceName) {
+            case 'ollama':
+                config['ollama.model'] = document.getElementById('ollama-model').value;
+                break;
+            case 'memory':
+                config['memory.semantic_search_enabled'] = document.getElementById('semantic-search').checked;
+                config['memory.max_memories'] = parseInt(document.getElementById('max-memories').value);
+                break;
+            case 'discord':
+                config['integrations.discord.enabled'] = document.getElementById('discord-enabled').checked;
+                break;
+            case 'vtube_studio':
+                config['integrations.vtube_studio.enabled'] = document.getElementById('vtube_studio-enabled').checked;
+                break;
+            case 'tts':
+                config['integrations.piper_tts.enabled'] = document.getElementById('tts-enabled').checked;
+                break;
+        }
+        
+        socket.emit('update_settings', config);
+    }
+    
+    // Initial load
+    updateServicesStatus();
+    setInterval(updateServicesStatus, 10000); // Update every 10 seconds
+</script>
+{% endblock %}

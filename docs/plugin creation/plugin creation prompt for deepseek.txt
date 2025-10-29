@@ -1,0 +1,26 @@
+Create a new plugin for the AI Companion system using the provided plugin base class.
+
+PLUGIN REQUIREMENTS:
+- Plugin Name: [Your Plugin Name]
+- Purpose: [Describe what the plugin does]
+- Key Features: [List main functionality]
+- Configuration: [What settings it needs]
+- Integration: [How it interacts with AI/memory/character systems]
+
+IMPLEMENTATION GUIDELINES:
+1. Follow the PluginBase abstract class structure
+2. Include proper error handling and logging
+3. Use the configuration system for settings
+4. Implement lifecycle methods (initialize, cleanup)
+5. Use event handlers (on_message_received, on_message_sent) if needed
+6. Include a configuration schema for WebUI settings
+7. Add type hints and docstrings
+8. Make it modular and thread-safe if needed
+
+TECHNICAL CONTEXT:
+- The AI Companion uses Ollama for AI responses
+- Has emotional state tracking and memory system
+- WebUI for configuration and monitoring
+- Character system for personality management
+
+Please provide the complete plugin code with imports, class definition, and all required methods implemented.

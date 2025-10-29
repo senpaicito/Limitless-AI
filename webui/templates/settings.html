@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-header">
+        <h2>🔧 Settings & Configuration</h2>
+        <p>Configure your AI Companion's behavior and capabilities</p>
+    </div>
+    
+    <div class="settings-tabs">
+        <button class="settings-tab active" data-tab="ai">AI Settings</button>
+        <button class="settings-tab" data-tab="memory">Memory</button>
+        <button class="settings-tab" data-tab="personality">Personality</button>
+        <button class="settings-tab" data-tab="integrations">Integrations</button>
+        <button class="settings-tab" data-tab="advanced">Advanced</button>
+    </div>
+    
+    <div class="settings-content">
+        <div id="ai-settings" class="settings-section active">
+            <h3>🤖 AI Configuration</h3>
+            
+            <div class="setting-group">
+                <label>Ollama Model:
+                    <select id="ai-model">
+                        <option value="llama2">Llama 2</option>
+                        <option value="mistral">Mistral</option>
+                        <option value="codellama">CodeLlama</option>
+                        <option value="phi">Phi-2</option>
+                    </select>
+                </label>
+                
+                <label>Temperature:
+                    <input type="range" id="ai-temperature" min="0" max="1" step="0.1" value="0.7">
+                    <span id="temperature-value">0.7</span>
+                </label>
+                
+                <label>Max Tokens:
+                    <input type="number" id="ai-max-tokens" min="100" max="4000" value="500">
+                </label>
+            </div>
+        </div>
+        
+        <div id="memory-settings" class="settings-section">
+            <h3>🧠 Memory System</h3>
+            
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="semantic-search-enabled">
+                    Enable Semantic Search
+                </label>
+                
+                <label>Maximum Memories:
+                    <input type="number" id="max-memories" min="100" max="10000" value="1000">
+                </label>
+                
+                <label>Memory Importance Threshold:
+                    <input type="range" id="memory-threshold" min="0" max="1" step="0.1" value="0.3">
+                    <span id="threshold-value">0.3</span>
+                </label>
+            </div>
+        </div>
+        
+        <div id="personality-settings" class="settings-section">
+            <h3>😊 Personality & Emotions</h3>
+            
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="learning-enabled" checked>
+                    Enable Learning & Adaptation
+                </label>
+                
+                <label>Adaptation Rate:
+                    <input type="range" id="adaptation-rate" min="0" max="0.5" step="0.05" value="0.1">
+                    <span id="adaptation-value">0.1</span>
+                </label>
+                
+                <label>
+                    <input type="checkbox" id="emotional-context-enabled" checked>
+                    Use Emotional Context
+                </label>
+            </div>
+            
+            <div class="personality-traits">
+                <h4>Personality Traits</h4>
+                <div id="traits-container">
+                    <!-- Traits will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <div id="integrations-settings" class="settings-section">
+            <h3>🔌 Integrations</h3>
+            
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="discord-enabled">
+                    Enable Discord Bot
+                </label>
+                
+                <label>
+                    <input type="checkbox" id="vtube-enabled">
+                    Enable VTube Studio
+                </label>
+                
+                <label>
+                    <input type="checkbox" id="tts-enabled">
+                    Enable Text-to-Speech
+                </label>
+            </div>
+            
+            <div class="integration-details" id="integration-details">
+                <!-- Integration-specific settings will appear here -->
+            </div>
+        </div>
+        
+        <div id="advanced-settings" class="settings-section">
+            <h3>⚙️ Advanced Settings</h3>
+            
+            <div class="setting-group">
+                <label>WebUI Host:
+                    <input type="text" id="webui-host" value="127.0.0.1">
+                </label>
+                
+                <label>WebUI Port:
+                    <input type="number" id="webui-port" min="1000" max="65535" value="5000">
+                </label>
+                
+                <label>
+                    <input type="checkbox" id="debug-mode">
+                    Enable Debug Mode
+                </label>
+            </div>
+            
+            <div class="danger-zone">
+                <h4>⚠️ Danger Zone</h4>
+                <button class="btn-danger" onclick="clearAllMemories()">Clear All Memories</button>
+                <button class="btn-danger" onclick="resetPersonality()">Reset Personality</button>
+                <button class="btn-danger" onclick="exportData()">Export All Data</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="settings-actions">
+        <button class="btn-primary" onclick="saveAllSettings()">Save All Settings</button>
+        <button class="btn-secondary" onclick="loadCurrentSettings()">Reload Current</button>
+    </div>
+</div>
+
+<script>
+    // Settings tab management
+    document.querySelectorAll('.settings-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active class from all tabs and sections
+            document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding section
+            this.classList.add('active');
+            const tabName = this.getAttribute('data-tab');
+            document.getElementById(`${tabName}-settings`).classList.add('active');
+        });
+    });
+    
+    // Range value displays
+    document.getElementById('ai-temperature').addEventListener('input', function() {
+        document.getElementById('temperature-value').textContent = this.value;
+    });
+    
+    document.getElementById('memory-threshold').addEventListener('input', function() {
+        document.getElementById('threshold-value').textContent = this.value;
+    });
+    
+    document.getElementById('adaptation-rate').addEventListener('input', function() {
+        document.getElementById('adaptation-value').textContent = this.value;
+    });
+    
+    // Load current settings
+    function loadCurrentSettings() {
+        fetch('/api/config')
+            .then(response => response.json())
+            .then(config => {
+                // AI Settings
+                document.getElementById('ai-model').value = config.ollama?.model || 'llama2';
+                document.getElementById('ai-temperature').value = config.ollama?.temperature || 0.7;
+                document.getElementById('temperature-value').textContent = config.ollama?.temperature || 0.7;
+                document.getElementById('ai-max-tokens').value = config.ollama?.max_tokens || 500;
+                
+                // Memory Settings
+                document.getElementById('semantic-search-enabled').checked = config.memory?.semantic_search_enabled || false;
+                document.getElementById('max-memories').value = config.memory?.max_memories || 1000;
+                document.getElementById('memory-threshold').value = config.memory?.importance_threshold || 0.3;
+                document.getElementById('threshold-value').textContent = config.memory?.importance_threshold || 0.3;
+                
+                // Personality Settings
+                document.getElementById('learning-enabled').checked = config.personality?.learning_enabled || true;
+                document.getElementById('adaptation-rate').value = config.personality?.adaptation_rate || 0.1;
+                document.getElementById('adaptation-value').textContent = config.personality?.adaptation_rate || 0.1;
+                document.getElementById('emotional-context-enabled').checked = config.personality?.emotional_context || true;
+                
+                // Integration Settings
+                document.getElementById('discord-enabled').checked = config.integrations?.discord?.enabled || false;
+                document.getElementById('vtube-enabled').checked = config.integrations?.vtube_studio?.enabled || false;
+                document.getElementById('tts-enabled').checked = config.integrations?.piper_tts?.enabled || false;
+                
+                // Advanced Settings
+                document.getElementById('webui-host').value = config.webui?.host || '127.0.0.1';
+                document.getElementById('webui-port').value = config.webui?.port || 5000;
+                document.getElementById('debug-mode').checked = config.core?.debug || false;
+            });
+    }
+    
+    // Save all settings
+    function saveAllSettings() {
+        const settings = {
+            'ollama.model': document.getElementById('ai-model').value,
+            'ollama.temperature': parseFloat(document.getElementById('ai-temperature').value),
+            'ollama.max_tokens': parseInt(document.getElementById('ai-max-tokens').value),
+            'memory.semantic_search_enabled': document.getElementById('semantic-search-enabled').checked,
+            'memory.max_memories': parseInt(document.getElementById('max-memories').value),
+            'personality.learning_enabled': document.getElementById('learning-enabled').checked,
+            'personality.adaptation_rate': parseFloat(document.getElementById('adaptation-rate').value),
+            'personality.emotional_context': document.getElementById('emotional-context-enabled').checked,
+            'integrations.discord.enabled': document.getElementById('discord-enabled').checked,
+            'integrations.vtube_studio.enabled': document.getElementById('vtube-enabled').checked,
+            'integrations.piper_tts.enabled': document.getElementById('tts-enabled').checked,
+            'webui.host': document.getElementById('webui-host').value,
+            'webui.port': parseInt(document.getElementById('webui-port').value),
+            'core.debug': document.getElementById('debug-mode').checked
+        };
+        
+        socket.emit('update_settings', settings);
+        alert('Settings saved successfully!');
+    }
+    
+    // Dangerous operations
+    function clearAllMemories() {
+        if (confirm('Are you sure you want to clear ALL memories? This cannot be undone!')) {
+            // Implementation would go here
+            console.log('Clearing all memories...');
+        }
+    }
+    
+    function resetPersonality() {
+        if (confirm('Reset personality to default? This will erase all learned adaptations.')) {
+            // Implementation would go here
+            console.log('Resetting personality...');
+        }
+    }
+    
+    function exportData() {
+        // Implementation would go here
+        console.log('Exporting data...');
+    }
+    
+    // Load settings on page load
+    loadCurrentSettings();
+</script>
+{% endblock %}

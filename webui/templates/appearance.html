@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="appearance-container">
+    <div class="appearance-header">
+        <h2>🎨 Appearance & Themes</h2>
+        <p>Customize the look and feel of your AI Companion</p>
+    </div>
+    
+    <div class="theme-selector">
+        <h3>Color Theme</h3>
+        <div class="theme-options">
+            <div class="theme-option" data-theme="dark">
+                <div class="theme-preview dark-preview">
+                    <div class="preview-header"></div>
+                    <div class="preview-content">
+                        <div class="preview-message user"></div>
+                        <div class="preview-message ai"></div>
+                    </div>
+                </div>
+                <span>Dark Theme</span>
+            </div>
+            
+            <div class="theme-option" data-theme="light">
+                <div class="theme-preview light-preview">
+                    <div class="preview-header"></div>
+                    <div class="preview-content">
+                        <div class="preview-message user"></div>
+                        <div class="preview-message ai"></div>
+                    </div>
+                </div>
+                <span>Light Theme</span>
+            </div>
+            
+            <div class="theme-option" data-theme="purple-dark">
+                <div class="theme-preview purple-dark-preview">
+                    <div class="preview-header"></div>
+                    <div class="preview-content">
+                        <div class="preview-message user"></div>
+                        <div class="preview-message ai"></div>
+                    </div>
+                </div>
+                <span>Purple Dark</span>
+            </div>
+            
+            <div class="theme-option" data-theme="purple-light">
+                <div class="theme-preview purple-light-preview">
+                    <div class="preview-header"></div>
+                    <div class="preview-content">
+                        <div class="preview-message user"></div>
+                        <div class="preview-message ai"></div>
+                    </div>
+                </div>
+                <span>Purple Light</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="accent-customizer">
+        <h3>Accent Color</h3>
+        <div class="color-options">
+            <div class="color-option" data-color="purple" style="background-color: #8b5cf6;"></div>
+            <div class="color-option" data-color="blue" style="background-color: #3b82f6;"></div>
+            <div class="color-option" data-color="green" style="background-color: #10b981;"></div>
+            <div class="color-option" data-color="red" style="background-color: #ef4444;"></div>
+            <div class="color-option" data-color="pink" style="background-color: #ec4899;"></div>
+            <div class="color-option" data-color="orange" style="background-color: #f59e0b;"></div>
+        </div>
+        
+        <div class="custom-color">
+            <label>Custom Color:
+                <input type="color" id="custom-color-picker" value="#8b5cf6">
+            </label>
+        </div>
+    </div>
+    
+    <div class="layout-options">
+        <h3>Layout & Display</h3>
+        
+        <div class="layout-group">
+            <label>
+                <input type="checkbox" id="compact-mode">
+                Compact Mode
+            </label>
+            
+            <label>
+                <input type="checkbox" id="sidebar-left">
+                Sidebar on Left
+            </label>
+            
+            <label>
+                <input type="checkbox" id="show-emotions" checked>
+                Show Emotional Indicators
+            </label>
+            
+            <label>
+                <input type="checkbox" id="animations-enabled" checked>
+                Enable Animations
+            </label>
+        </div>
+        
+        <div class="font-size">
+            <label>Font Size:
+                <input type="range" id="font-size" min="12" max="18" value="14">
+                <span id="font-size-value">14px</span>
+            </label>
+        </div>
+    </div>
+    
+    <div class="appearance-actions">
+        <button class="btn-primary" onclick="applyAppearanceSettings()">Apply Changes</button>
+        <button class="btn-secondary" onclick="resetAppearance()">Reset to Default</button>
+        <button class="btn-secondary" onclick="exportTheme()">Export Theme</button>
+    </div>
+</div>
+
+<script>
+    // Theme selection
+    document.querySelectorAll('.theme-option').forEach(option => {
+        option.addEventListener('click', function() {
+            const theme = this.getAttribute('data-theme');
+            applyTheme(theme);
+        });
+    });
+    
+    // Accent color selection
+    document.querySelectorAll('.color-option').forEach(option => {
+        option.addEventListener('click', function() {
+            const color = this.getAttribute('data-color');
+            applyAccentColor(color);
+        });
+    });
+    
+    // Custom color picker
+    document.getElementById('custom-color-picker').addEventListener('change', function() {
+        applyCustomColor(this.value);
+    });
+    
+    // Font size slider
+    document.getElementById('font-size').addEventListener('input', function() {
+        document.getElementById('font-size-value').textContent = this.value + 'px';
+        document.documentElement.style.setProperty('--base-font-size', this.value + 'px');
+    });
+    
+    function applyTheme(themeName) {
+        document.documentElement.setAttribute('data-theme', themeName);
+        localStorage.setItem('theme', themeName);
+        
+        // Update stylesheet
+        const themeStylesheet = document.getElementById('theme-stylesheet');
+        themeStylesheet.href = `{{ url_for('static', filename='css/') }}${themeName}.css`;
+    }
+    
+    function applyAccentColor(color) {
+        const colors = {
+            'purple': '#8b5cf6',
+            'blue': '#3b82f6', 
+            'green': '#10b981',
+            'red': '#ef4444',
+            'pink': '#ec4899',
+            'orange': '#f59e0b'
+        };
+        
+        document.documentElement.style.setProperty('--accent-color', colors[color]);
+        localStorage.setItem('accentColor', colors[color]);
+    }
+    
+    function applyCustomColor(color) {
+        document.documentElement.style.setProperty('--accent-color', color);
+        localStorage.setItem('accentColor', color);
+    }
+    
+    function applyAppearanceSettings() {
+        const settings = {
+            theme: localStorage.getItem('theme') || 'dark',
+            accentColor: localStorage.getItem('accentColor') || '#8b5cf6',
+            compactMode: document.getElementById('compact-mode').checked,
+            sidebarLeft: document.getElementById('sidebar-left').checked,
+            showEmotions: document.getElementById('show-emotions').checked,
+            animations: document.getElementById('animations-enabled').checked,
+            fontSize: document.getElementById('font-size').value
+        };
+        
+        localStorage.setItem('appearanceSettings', JSON.stringify(settings));
+        alert('Appearance settings applied!');
+    }
+    
+    function resetAppearance() {
+        localStorage.removeItem('theme');
+        localStorage.removeItem('accentColor');
+        localStorage.removeItem('appearanceSettings');
+        
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.style.removeProperty('--accent-color');
+        document.getElementById('compact-mode').checked = false;
+        document.getElementById('sidebar-left').checked = false;
+        document.getElementById('show-emotions').checked = true;
+        document.getElementById('animations-enabled').checked = true;
+        document.getElementById('font-size').value = 14;
+        document.getElementById('font-size-value').textContent = '14px';
+        
+        const themeStylesheet = document.getElementById('theme-stylesheet');
+        themeStylesheet.href = `{{ url_for('static', filename='css/') }}dark.css`;
+        
+        alert('Appearance reset to default!');
+    }
+    
+    function exportTheme() {
+        const settings = {
+            theme: localStorage.getItem('theme') || 'dark',
+            accentColor: localStorage.getItem('accentColor') || '#8b5cf6',
+            appearanceSettings: localStorage.getItem('appearanceSettings')
+        };
+        
+        const dataStr = JSON.stringify(settings, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = 'ai_companion_theme.json';
+        link.click();
+    }
+    
+    // Load saved appearance settings
+    function loadAppearanceSettings() {
+        const savedSettings = localStorage.getItem('appearanceSettings');
+        if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            
+            if (settings.theme) {
+                applyTheme(settings.theme);
+            }
+            
+            if (settings.accentColor) {
+                document.documentElement.style.setProperty('--accent-color', settings.accentColor);
+                document.getElementById('custom-color-picker').value = settings.accentColor;
+            }
+            
+            document.getElementById('compact-mode').checked = settings.compactMode || false;
+            document.getElementById('sidebar-left').checked = settings.sidebarLeft || false;
+            document.getElementById('show-emotions').checked = settings.showEmotions !== false;
+            document.getElementById('animations-enabled').checked = settings.animations !== false;
+            document.getElementById('font-size').value = settings.fontSize || 14;
+            document.getElementById('font-size-value').textContent = (settings.fontSize || 14) + 'px';
+        }
+    }
+    
+    // Load settings on page load
+    loadAppearanceSettings();
+</script>
+
+<style>
+    .theme-preview {
+        width: 120px;
+        height: 80px;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: border-color 0.3s;
+    }
+    
+    .theme-preview:hover {
+        border-color: var(--accent-color);
+    }
+    
+    .dark-preview {
+        background: #1a1a1a;
+    }
+    
+    .light-preview {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .purple-dark-preview {
+        background: #1f1f2e;
+    }
+    
+    .purple-light-preview {
+        background: #f8f7ff;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .preview-header {
+        height: 20px;
+        background: var(--accent-color);
+    }
+    
+    .preview-content {
+        padding: 8px;
+    }
+    
+    .preview-message {
+        height: 8px;
+        margin-bottom: 4px;
+        border-radius: 4px;
+    }
+    
+    .dark-preview .preview-message.user {
+        background: #374151;
+    }
+    
+    .dark-preview .preview-message.ai {
+        background: #4b5563;
+    }
+    
+    .light-preview .preview-message.user {
+        background: #e5e7eb;
+    }
+    
+    .light-preview .preview-message.ai {
+        background: #f3f4f6;
+    }
+    
+    .color-option {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-block;
+        margin: 5px;
+        border: 2px solid transparent;
+        transition: transform 0.2s;
+    }
+    
+    .color-option:hover {
+        transform: scale(1.1);
+    }
+    
+    .color-option.active {
+        border-color: #000;
+    }
+</style>
+{% endblock %}

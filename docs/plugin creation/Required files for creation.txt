@@ -1,0 +1,11 @@
+    plugins/plugin_base.py - Base plugin class with abstract methods
+
+    config/default_config.json - Configuration structure reference
+
+    ai_core/emotion_types.py - Emotional system types and enums
+
+    memory/memory_manager.py - Memory system interface
+
+    character/character_manager.py - Character management system
+
+    docs/plugin creation/plugin_template.py - Plugin template

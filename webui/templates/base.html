@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Companion - {{ character_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark.css') }}" id="theme-stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        .mobile-warning {
+            display: none;
+            background: #ff6b6b;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        @media (max-width: 768px) {
+            .mobile-warning {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-warning">
+        Mobile version is optimized but some features may be limited.
+    </div>
+    
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h1>🤖 AI Companion</h1>
+            <span class="character-name">{{ character_name }}</span>
+        </div>
+        <div class="nav-tabs">
+            <a href="/chat" class="tab-button {% if request.path == '/chat' %}active{% endif %}" data-tab="chat">
+                💬 Chat
+            </a>
+            <a href="/services" class="tab-button {% if request.path == '/services' %}active{% endif %}" data-tab="services">
+                ⚙️ Services
+            </a>
+            <a href="/settings" class="tab-button {% if request.path == '/settings' %}active{% endif %}" data-tab="settings">
+                🔧 Settings
+            </a>
+            <a href="/appearance" class="tab-button {% if request.path == '/appearance' %}active{% endif %}" data-tab="appearance">
+                🎨 Appearance
+            </a>
+        </div>
+        <div class="nav-actions">
+            <button id="theme-toggle" class="btn-secondary">🌙 Toggle Theme</button>
+            <div class="status-indicator" id="connection-status">
+                <div class="status-dot"></div>
+                <span>Connecting...</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        // Theme management
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        
+        document.getElementById('theme-toggle').addEventListener('click', function() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // Update stylesheet
+            const themeStylesheet = document.getElementById('theme-stylesheet');
+            themeStylesheet.href = `{{ url_for('static', filename='css/') }}${newTheme}.css`;
+        });
+
+        // Connection status
+        const socket = io();
+        const statusElement = document.getElementById('connection-status');
+        
+        socket.on('connect', function() {
+            statusElement.innerHTML = '<div class="status-dot connected"></div><span>Connected</span>';
+        });
+        
+        socket.on('disconnect', function() {
+            statusElement.innerHTML = '<div class="status-dot disconnected"></div><span>Disconnected</span>';
+        });
+    </script>
+</body>
+</html>
