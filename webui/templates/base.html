@@ -24,6 +24,22 @@
                 display: block;
             }
         }
+        
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-dot.connected {
+            background-color: #4CAF50;
+        }
+        
+        .status-dot.disconnected {
+            background-color: #f44336;
+        }
     </style>
 </head>
 <body>
@@ -33,27 +49,27 @@
     
     <nav class="navbar">
         <div class="nav-brand">
-            <h1>🤖 AI Companion</h1>
+            <h1>AI Companion</h1>
             <span class="character-name">{{ character_name }}</span>
         </div>
         <div class="nav-tabs">
             <a href="/chat" class="tab-button {% if request.path == '/chat' %}active{% endif %}" data-tab="chat">
-                💬 Chat
+                Chat
             </a>
             <a href="/services" class="tab-button {% if request.path == '/services' %}active{% endif %}" data-tab="services">
-                ⚙️ Services
+                Services
             </a>
             <a href="/settings" class="tab-button {% if request.path == '/settings' %}active{% endif %}" data-tab="settings">
-                🔧 Settings
+                Settings
             </a>
             <a href="/appearance" class="tab-button {% if request.path == '/appearance' %}active{% endif %}" data-tab="appearance">
-                🎨 Appearance
+                Appearance
             </a>
         </div>
         <div class="nav-actions">
-            <button id="theme-toggle" class="btn-secondary">🌙 Toggle Theme</button>
+            <button id="theme-toggle" class="btn-secondary">Toggle Theme</button>
             <div class="status-indicator" id="connection-status">
-                <div class="status-dot"></div>
+                <div class="status-dot disconnected"></div>
                 <span>Connecting...</span>
             </div>
         </div>
@@ -63,34 +79,6 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script>
-        // Theme management
-        const currentTheme = localStorage.getItem('theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', currentTheme);
-        
-        document.getElementById('theme-toggle').addEventListener('click', function() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            
-            // Update stylesheet
-            const themeStylesheet = document.getElementById('theme-stylesheet');
-            themeStylesheet.href = `{{ url_for('static', filename='css/') }}${newTheme}.css`;
-        });
-
-        // Connection status
-        const socket = io();
-        const statusElement = document.getElementById('connection-status');
-        
-        socket.on('connect', function() {
-            statusElement.innerHTML = '<div class="status-dot connected"></div><span>Connected</span>';
-        });
-        
-        socket.on('disconnect', function() {
-            statusElement.innerHTML = '<div class="status-dot disconnected"></div><span>Disconnected</span>';
-        });
-    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

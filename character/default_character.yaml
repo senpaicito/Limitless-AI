@@ -33,7 +33,7 @@ character:
       curiosity: 0.9
       empathy: 0.8
 
-  # Learning Preferences (for Phase 2)
+  # Learning Preferences
   learning:
     interests: ["psychology", "technology", "art", "science", "philosophy"]
     adaptation_rate: "medium"

@@ -340,16 +340,19 @@ class AIEngine:
         emotion = self.current_emotional_state['primary_emotion']
         intensity = self.current_emotional_state['intensity']
         
+        # Extract the string value from EmotionType enum
+        emotion_value = emotion.value if hasattr(emotion, 'value') else str(emotion)
+        
         intensity_desc = "slightly" if intensity < 0.4 else "moderately" if intensity < 0.7 else "very"
         
-        emotional_context = f"Current emotional state: {intensity_desc} {emotion.value}"
+        emotional_context = f"Current emotional state: {intensity_desc} {emotion_value}"
         
         # Add secondary emotions if significant
-        significant_secondaries = [
-            f"{emotion.value} ({intensity:.1f})" 
-            for emotion, intensity in self.current_emotional_state['secondary_emotions'].items()
-            if intensity > 0.3
-        ]
+        significant_secondaries = []
+        for emotion_obj, emotion_intensity in self.current_emotional_state['secondary_emotions'].items():
+            if emotion_intensity > 0.3:
+                emotion_str = emotion_obj.value if hasattr(emotion_obj, 'value') else str(emotion_obj)
+                significant_secondaries.append(f"{emotion_str} ({emotion_intensity:.1f})")
         
         if significant_secondaries:
             emotional_context += f". Also feeling: {', '.join(significant_secondaries)}"
@@ -361,12 +364,15 @@ class AIEngine:
         emotion = self.current_emotional_state['primary_emotion']
         intensity = self.current_emotional_state['intensity']
         
+        # Extract the string value from EmotionType enum
+        emotion_value = emotion.value if hasattr(emotion, 'value') else str(emotion)
+        
         if intensity < 0.4:
-            return f"slightly_{emotion.value}"
+            return f"slightly_{emotion_value}"
         elif intensity < 0.7:
-            return f"moderately_{emotion.value}"
+            return f"moderately_{emotion_value}"
         else:
-            return f"very_{emotion.value}"
+            return f"very_{emotion_value}"
         
     def _get_personality_context(self) -> str:
         """Get personality context for system prompt"""
@@ -396,10 +402,8 @@ class AIEngine:
         else:
             return "No active integrations"
 
-    # ========== MISSING METHODS ADDED BELOW ==========
-
     def get_status(self) -> Dict[str, Any]:
-        """Get AI engine status - THIS WAS MISSING"""
+        """Get AI engine status"""
         status = {
             'initialized': True,
             'character': self.character_manager.get_name(),

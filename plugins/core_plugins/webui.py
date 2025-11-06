@@ -17,7 +17,8 @@ class WebUIPlugin(PluginBase):
         return "2.0.0"
         
     def initialize(self) -> bool:
-        if not self.config.get('webui.enabled', False):
+        """Initialize WebUI"""
+        if not self.config.get('webui.enabled', True):
             self.logger.info("WebUI is disabled in configuration")
             return True
             
@@ -38,10 +39,11 @@ class WebUIPlugin(PluginBase):
             return True
             
         except Exception as e:
-            self.logger.error(f"Failed to initialize WebUI plugin: {e}")
+            self.logger.error("Failed to initialize WebUI plugin: %s", e)
             return False
             
     def cleanup(self) -> None:
+        """Cleanup WebUI"""
         if self.webui:
             self.webui.stop()
         self.logger.info("WebUI plugin cleaned up")
@@ -50,7 +52,7 @@ class WebUIPlugin(PluginBase):
         return {
             'webui.enabled': {
                 'type': 'boolean',
-                'default': False,
+                'default': True,
                 'description': 'Enable the WebUI interface'
             },
             'webui.host': {
@@ -65,10 +67,7 @@ class WebUIPlugin(PluginBase):
             }
         }
         
-    def on_message_received(self, message: str, message_type: str = "user") -> None:
-        # WebUI handles its own messaging, but we can log or broadcast if needed
-        pass
-        
     def on_message_sent(self, message: str, message_type: str = "ai") -> None:
-        # WebUI handles its own messaging
-        pass
+        """Handle AI responses - ensure they're processed by WebUI"""
+        if message_type == "ai":
+            self.logger.debug("AI response processed by WebUI plugin")

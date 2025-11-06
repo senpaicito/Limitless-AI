@@ -30,7 +30,7 @@ class BasicMemoryManager(MemoryManager):
         )
         return self.add_memory(memory)
         
-    def get_conversation_history(self, limit: int = 10) -> List[Dict[str, str]]:
+    def get_conversation_history(self, limit: int = 10) -> list[dict[str, str]]:
         """Get conversation history in message format"""
         recent_memories = self.get_recent_memories(limit)
         conversations = []

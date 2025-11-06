@@ -53,7 +53,7 @@
         </div>
         
         <div class="chat-messages" id="chat-messages">
-            <!-- Messages will be loaded here -->
+            <!-- Messages will be loaded here by main.js -->
         </div>
         
         <div class="chat-input-container">
@@ -75,93 +75,5 @@
     </div>
 </div>
 
-<script>
-    // Chat functionality
-    const messageInput = document.getElementById('message-input');
-    const sendButton = document.getElementById('send-button');
-    const chatMessages = document.getElementById('chat-messages');
-    const clearChatBtn = document.getElementById('clear-chat');
-    
-    function addMessage(sender, message, emotion = 'neutral', timestamp = null) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${sender}-message`;
-        
-        const time = timestamp || new Date().toLocaleTimeString();
-        
-        messageDiv.innerHTML = `
-            <div class="message-header">
-                <span class="message-sender">${sender === 'user' ? 'You' : '{{ character_name }}'}</span>
-                <span class="message-time">${time}</span>
-            </div>
-            <div class="message-content">${message}</div>
-            ${sender === 'ai' ? `<div class="message-emotion">Feeling: ${emotion}</div>` : ''}
-        `;
-        
-        chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-    
-    function sendMessage() {
-        const message = messageInput.value.trim();
-        if (!message) return;
-        
-        // Add user message to chat
-        addMessage('user', message);
-        messageInput.value = '';
-        
-        // Send to server
-        socket.emit('send_message', { message: message });
-    }
-    
-    // Event listeners
-    sendButton.addEventListener('click', sendMessage);
-    messageInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-    
-    clearChatBtn.addEventListener('click', function() {
-        chatMessages.innerHTML = '';
-    });
-    
-    // Socket event handlers
-    socket.on('ai_response', function(data) {
-        addMessage('ai', data.message, data.emotion);
-        
-        // Update emotional state display
-        document.getElementById('primary-emotion').textContent = data.emotion;
-        document.getElementById('intensity-fill').style.width = (data.intensity * 100) + '%';
-        document.getElementById('intensity-text').textContent = Math.round(data.intensity * 100) + '%';
-    });
-    
-    // Load chat history
-    fetch('/api/chat/history')
-        .then(response => response.json())
-        .then(conversations => {
-            conversations.forEach(conv => {
-                addMessage('user', conv.user, '', new Date(conv.timestamp).toLocaleTimeString());
-                addMessage('ai', conv.ai, conv.emotion, new Date(conv.timestamp).toLocaleTimeString());
-            });
-        });
-    
-    // Load memory stats
-    fetch('/api/memory/stats')
-        .then(response => response.json())
-        .then(stats => {
-            document.getElementById('total-memories').textContent = stats.total_memories || 0;
-            document.getElementById('vector-db-status').textContent = 
-                stats.vector_memory_enabled ? 'Enabled' : 'Disabled';
-        });
-    
-    // Memory search
-    document.getElementById('search-btn').addEventListener('click', function() {
-        const query = document.getElementById('memory-search').value;
-        if (!query) return;
-        
-        // This would call a search API endpoint
-        console.log('Searching for:', query);
-    });
-</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% endblock %}

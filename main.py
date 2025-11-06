@@ -1,80 +1,87 @@
 #!/usr/bin/env python3
 """
-AI Companion - Main Entry Point
-A locally hosted, Python-based AI companion using Ollama
+AI Companion - Main Entry Point with Integrated WebUI
 """
 
 import logging
 import signal
 import sys
 import time
+import threading
 from utils.logger import setup_logging
 from ai_engine import AIEngine
-from webui.webui_stub import WebUIStub
+from webui.app import WebUI
 
 class AICompanion:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.ai_engine = None
         self.webui = None
+        self.webui_thread = None
         self.running = False
         
     def initialize(self) -> bool:
         """Initialize the AI Companion application"""
         try:
-            self.logger.info("Starting AI Companion...")
+            self.logger.info("Starting AI Companion with Integrated WebUI...")
             
             # Initialize AI Engine
             self.ai_engine = AIEngine()
             if not self.ai_engine.initialize():
                 self.logger.error("Failed to initialize AI Engine")
                 return False
-                
-            # Initialize WebUI (stub for Phase 1)
-            self.webui = WebUIStub(
+            
+            # Initialize WebUI directly (not as plugin)
+            # Access character_manager and memory_manager from the ai_engine
+            self.webui = WebUI(
                 self.ai_engine.config,
-                self.ai_engine.character_manager, 
-                self.ai_engine.memory_manager,
+                self.ai_engine.character_manager,  # Fixed: access from ai_engine
+                self.ai_engine.memory_manager,     # Fixed: access from ai_engine
                 self.ai_engine
             )
-            self.webui.initialize()
+            
+            # Start WebUI in a separate thread
+            self.webui_thread = threading.Thread(target=self.webui.start, daemon=True)
+            self.webui_thread.start()
             
             # Setup signal handlers for graceful shutdown
             signal.signal(signal.SIGINT, self.signal_handler)
             signal.signal(signal.SIGTERM, self.signal_handler)
             
-            self.logger.info("AI Companion initialized successfully")
+            self.logger.info("AI Companion with Integrated WebUI initialized successfully")
             return True
             
         except Exception as e:
-            self.logger.error(f"Failed to initialize AI Companion: {e}")
+            self.logger.error("Failed to initialize AI Companion: %s", e)
             return False
             
     def signal_handler(self, signum, frame):
         """Handle shutdown signals"""
-        self.logger.info(f"Received signal {signum}, shutting down...")
+        self.logger.info("Received signal %s, shutting down...", signum)
         self.shutdown()
         
     def run(self) -> None:
         """Main application loop"""
         self.running = True
         
-        # Start WebUI if enabled (Phase 2)
-        if self.webui and self.webui.enabled:
-            self.webui.start()
-            
-        # Start CLI interface if available
-        cli_plugin = self.ai_engine.plugin_manager.get_plugin("cli_interface")
-        if cli_plugin:
-            cli_plugin.start_interactive_mode()
-            
-        # Main loop
+        host = self.ai_engine.config.get('webui.host', '127.0.0.1')
+        port = self.ai_engine.config.get('webui.port', 5000)
+        
+        self.logger.info("=" * 60)
+        self.logger.info("AI Companion is running!")
+        self.logger.info("WebUI: http://%s:%s", host, port)
+        self.logger.info("Open the above URL in your browser to start chatting")
+        self.logger.info("=" * 60)
+        
+        # Main loop - just keep the application running
         while self.running and not self.ai_engine.shutdown_flag:
             try:
-                time.sleep(0.1)
+                time.sleep(1)
             except KeyboardInterrupt:
                 self.logger.info("Keyboard interrupt received")
                 break
+            except Exception as e:
+                self.logger.error("Error in main loop: %s", e)
                 
         self.shutdown()
         
@@ -83,11 +90,13 @@ class AICompanion:
         self.logger.info("Shutting down AI Companion...")
         self.running = False
         
-        if self.ai_engine:
-            self.ai_engine.shutdown()
-            
+        # Stop WebUI
         if self.webui:
             self.webui.stop()
+            
+        # Shutdown AI Engine
+        if self.ai_engine:
+            self.ai_engine.shutdown()
             
         self.logger.info("AI Companion shutdown complete")
         

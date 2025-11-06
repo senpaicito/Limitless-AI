@@ -15,21 +15,38 @@ class AICompanionUI {
         this.socket.on('ai_response', (data) => this.handleAIResponse(data));
         this.socket.on('services_status', (data) => this.updateServicesStatus(data));
         this.socket.on('settings_updated', (data) => this.handleSettingsUpdated(data));
+        this.socket.on('connected', (data) => this.handleServerConnected(data));
 
-        // Theme toggle
-        document.getElementById('theme-toggle')?.addEventListener('click', () => this.toggleTheme());
+        // Chat event listeners
+        this.setupChatEvents();
+    }
 
-        // Auto-reconnect
-        setInterval(() => {
-            if (!this.socket.connected) {
-                this.socket.connect();
-            }
-        }, 5000);
+    setupChatEvents() {
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+
+        if (sendButton && messageInput) {
+            sendButton.addEventListener('click', () => this.sendMessage());
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.sendMessage();
+                }
+            });
+        }
+
+        // Clear chat button
+        const clearChatBtn = document.getElementById('clear-chat');
+        if (clearChatBtn) {
+            clearChatBtn.addEventListener('click', () => this.clearChat());
+        }
     }
 
     initializeUI() {
         this.applyTheme(this.currentTheme);
-        this.loadUIState();
+        this.loadChatHistory();
+        this.loadMemoryStats();
+        this.startEmotionUpdates();
     }
 
     handleConnect() {
@@ -42,22 +59,71 @@ class AICompanionUI {
         console.log('Disconnected from AI Companion server');
     }
 
+    handleServerConnected(data) {
+        console.log('Server connection confirmed:', data);
+        this.updateConnectionStatus('connected');
+    }
+
     handleAIResponse(data) {
-        // This will be implemented in chat-specific JS
-        console.log('AI Response:', data);
+        console.log('AI Response received:', data);
+        this.addMessage('ai', data.message, data.emotion);
+        
+        // Update emotional state display
+        this.updateEmotionalState(data.emotion, data.intensity);
     }
 
-    updateServicesStatus(services) {
-        // This will be implemented in services-specific JS
-        console.log('Services status updated:', services);
+    sendMessage() {
+        const messageInput = document.getElementById('message-input');
+        const message = messageInput.value.trim();
+        
+        if (!message) return;
+
+        // Add user message to chat immediately
+        this.addMessage('user', message);
+        messageInput.value = '';
+
+        // Send to server
+        this.socket.emit('send_message', { message: message });
+        console.log('Message sent to server:', message);
     }
 
-    handleSettingsUpdated(data) {
-        if (data.status === 'success') {
-            this.showNotification('Settings updated successfully', 'success');
-        } else {
-            this.showNotification('Failed to update settings: ' + data.message, 'error');
+    addMessage(sender, message, emotion = 'neutral') {
+        const chatMessages = document.getElementById('chat-messages');
+        if (!chatMessages) return;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}-message`;
+        
+        const time = new Date().toLocaleTimeString();
+        
+        messageDiv.innerHTML = `
+            <div class="message-header">
+                <span class="message-sender">${sender === 'user' ? 'You' : document.querySelector('.character-name')?.textContent || 'AI'}</span>
+                <span class="message-time">${time}</span>
+            </div>
+            <div class="message-content">${this.escapeHtml(message)}</div>
+            ${sender === 'ai' ? `<div class="message-emotion">Feeling: ${emotion}</div>` : ''}
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    clearChat() {
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) {
+            chatMessages.innerHTML = '';
         }
+    }
+
+    escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;")
+            .replace(/\n/g, '<br>');
     }
 
     updateConnectionStatus(status) {
@@ -76,14 +142,19 @@ class AICompanionUI {
         }
     }
 
-    toggleTheme() {
-        this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
-        this.applyTheme(this.currentTheme);
-        localStorage.setItem('theme', this.currentTheme);
+    updateEmotionalState(emotion, intensity) {
+        const primaryEmotion = document.getElementById('primary-emotion');
+        const intensityFill = document.getElementById('intensity-fill');
+        const intensityText = document.getElementById('intensity-text');
+
+        if (primaryEmotion) primaryEmotion.textContent = emotion || 'neutral';
+        if (intensityFill) intensityFill.style.width = `${(intensity || 0.5) * 100}%`;
+        if (intensityText) intensityText.textContent = `${Math.round((intensity || 0.5) * 100)}%`;
     }
 
     applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
         
         // Update stylesheet
         const themeStylesheet = document.getElementById('theme-stylesheet');
@@ -92,28 +163,66 @@ class AICompanionUI {
         }
     }
 
-    loadUIState() {
-        // Load saved UI state from localStorage
-        const savedState = localStorage.getItem('ai_companion_ui_state');
-        if (savedState) {
-            try {
-                const state = JSON.parse(savedState);
-                // Apply saved state
-                if (state.theme) {
-                    this.applyTheme(state.theme);
-                }
-            } catch (e) {
-                console.error('Error loading UI state:', e);
-            }
+    async loadChatHistory() {
+        try {
+            const response = await fetch('/api/chat/history');
+            const conversations = await response.json();
+            
+            const chatMessages = document.getElementById('chat-messages');
+            if (!chatMessages) return;
+
+            // Clear existing messages
+            chatMessages.innerHTML = '';
+
+            // Add historical messages
+            conversations.forEach(conv => {
+                this.addMessage('user', conv.user, '', new Date(conv.timestamp).toLocaleTimeString());
+                this.addMessage('ai', conv.ai, conv.emotion, new Date(conv.timestamp).toLocaleTimeString());
+            });
+        } catch (error) {
+            console.error('Error loading chat history:', error);
         }
     }
 
-    saveUIState() {
-        const state = {
-            theme: this.currentTheme,
-            timestamp: Date.now()
-        };
-        localStorage.setItem('ai_companion_ui_state', JSON.stringify(state));
+    async loadMemoryStats() {
+        try {
+            const response = await fetch('/api/memory/stats');
+            const stats = await response.json();
+            
+            const totalMemories = document.getElementById('total-memories');
+            const vectorDbStatus = document.getElementById('vector-db-status');
+            
+            if (totalMemories) totalMemories.textContent = stats.total_memories || 0;
+            if (vectorDbStatus) {
+                vectorDbStatus.textContent = stats.vector_memory_enabled ? 'Enabled' : 'Disabled';
+            }
+        } catch (error) {
+            console.error('Error loading memory stats:', error);
+        }
+    }
+
+    startEmotionUpdates() {
+        // Periodically update emotional state
+        setInterval(() => {
+            this.fetchCurrentEmotions();
+        }, 5000); // Update every 5 seconds
+        
+        // Initial load
+        this.fetchCurrentEmotions();
+    }
+
+    async fetchCurrentEmotions() {
+        try {
+            const response = await fetch('/api/emotions/current');
+            const emotions = await response.json();
+            
+            this.updateEmotionalState(
+                emotions.primary_emotion, 
+                emotions.intensity
+            );
+        } catch (error) {
+            console.error('Error fetching emotions:', error);
+        }
     }
 
     showNotification(message, type = 'info') {
@@ -126,53 +235,6 @@ class AICompanionUI {
                 <button class="notification-close">&times;</button>
             </div>
         `;
-
-        // Add styles if not already added
-        if (!document.querySelector('#notification-styles')) {
-            const styles = document.createElement('style');
-            styles.id = 'notification-styles';
-            styles.textContent = `
-                .notification {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    z-index: 1000;
-                    background: var(--bg-secondary);
-                    border: 1px solid var(--border-color);
-                    border-radius: var(--border-radius);
-                    padding: 1rem;
-                    max-width: 300px;
-                    box-shadow: var(--shadow);
-                    animation: slideIn 0.3s ease;
-                }
-                .notification-success {
-                    border-left: 4px solid var(--success-color);
-                }
-                .notification-error {
-                    border-left: 4px solid var(--error-color);
-                }
-                .notification-warning {
-                    border-left: 4px solid var(--warning-color);
-                }
-                .notification-content {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                .notification-close {
-                    background: none;
-                    border: none;
-                    color: var(--text-secondary);
-                    cursor: pointer;
-                    font-size: 1.2rem;
-                }
-                @keyframes slideIn {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-            `;
-            document.head.appendChild(styles);
-        }
 
         // Add to page
         document.body.appendChild(notification);
@@ -192,26 +254,15 @@ class AICompanionUI {
         });
     }
 
-    // Utility function for making API calls
-    async apiCall(endpoint, options = {}) {
-        try {
-            const response = await fetch(endpoint, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                },
-                ...options
-            });
+    updateServicesStatus(services) {
+        console.log('Services status updated:', services);
+    }
 
-            if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error('API call failed:', error);
-            this.showNotification('API call failed: ' + error.message, 'error');
-            throw error;
+    handleSettingsUpdated(data) {
+        if (data.status === 'success') {
+            this.showNotification('Settings updated successfully', 'success');
+        } else {
+            this.showNotification('Failed to update settings: ' + data.message, 'error');
         }
     }
 }
@@ -220,8 +271,3 @@ class AICompanionUI {
 document.addEventListener('DOMContentLoaded', () => {
     window.aiCompanionUI = new AICompanionUI();
 });
-
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = AICompanionUI;
-}

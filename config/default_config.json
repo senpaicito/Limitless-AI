@@ -5,13 +5,13 @@
     "debug": true
   },
   "ollama": {
-    "model": "llama2",
+    "model": "INSERT_MODEL_HERE",
     "base_url": "http://localhost:11434",
     "temperature": 0.7,
-    "max_tokens": 500
+    "max_tokens": 2048
   },
   "memory": {
-    "type": "basic",
+    "type": "vector",				# this can be "basic" or "vector"
     "max_memories": 1000,
     "semantic_search_enabled": true,
     "vector_db_path": "./data/memories",
@@ -26,7 +26,7 @@
   "plugins": {
     "enabled": true,
     "plugins_path": "./plugins/custom_plugins",
-    "core_plugins": ["cli_interface", "webui", "discord_bot", "vtube_studio", "piper_tts"]
+    "core_plugins": ["discord_bot", "vtube_studio", "piper_tts"]
   },
   "integrations": {
     "discord": {

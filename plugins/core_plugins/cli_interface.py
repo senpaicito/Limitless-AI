@@ -33,7 +33,7 @@ class CLInterfacePlugin(PluginBase):
         self.logger.info("Starting interactive CLI mode")
         
         character_name = self.character_manager.get_name()
-        print(f"\n🤖 {character_name} is ready to chat!")
+        print("\nAI Companion is ready to chat!")
         print("Type 'quit', 'exit', or 'bye' to end the conversation")
         print("-" * 50)
         
@@ -51,7 +51,7 @@ class CLInterfacePlugin(PluginBase):
                     
                 # Check for exit commands
                 if user_input.lower() in ['quit', 'exit', 'bye']:
-                    print(f"\n{self.character_manager.get_name()}: Goodbye! It was nice talking with you! 👋")
+                    print(f"\n{self.character_manager.get_name()}: Goodbye! It was nice talking with you!")
                     # Signal the main application to shutdown
                     self.ai_engine.shutdown_flag = True
                     break
@@ -68,20 +68,21 @@ class CLInterfacePlugin(PluginBase):
                 print(f"\n{self.character_manager.get_name()}: {response}")
                 
             except KeyboardInterrupt:
-                print(f"\n\n{self.character_manager.get_name()}: Goodbye! 👋")
+                print(f"\n\n{self.character_manager.get_name()}: Goodbye!")
                 self.ai_engine.shutdown_flag = True
                 break
             except Exception as e:
-                self.logger.error(f"Error in CLI input loop: {e}")
-                print(f"\nError: {e}. Please try again.")
+                self.logger.error("Error in CLI input loop: %s", e)
+                print("Error: %s. Please try again.", e)
                 
     def on_message_received(self, message: str, message_type: str = "user") -> None:
         """Handle message received events"""
         if message_type == "user" and self.running:
             # We already handle user input in the input loop, so just log it
-            self.logger.debug(f"User message received: {message}")
+            self.logger.debug("User message received: %s", message)
             
     def on_message_sent(self, message: str, message_type: str = "ai") -> None:
         """Handle message sent events"""
         if message_type == "ai" and self.running:
-            self.logger.debug(f"AI message sent: {message}")
+            # Log without emojis to avoid encoding issues
+            self.logger.debug("AI message sent")
